@@ -559,6 +559,14 @@ func SocketPath(tailnetID string) string {
 	return filepath.Join(DefaultStateDir, tailnetID, "tailscaled.sock")
 }
 
+// RunScratchPath returns the directory on which the __nsexec helper of a tailnet mounts
+// a private tmpfs. The tmpfs holds the upper directory and the work directory of the
+// overlay mount on /run. The directory is empty on the host, because every mount on it
+// belongs to one mount namespace. See cmd/hydrascale/nsexec.go.
+func RunScratchPath(tailnetID string) string {
+	return filepath.Join(DefaultStateDir, tailnetID, "run-scratch")
+}
+
 // cleanupExistingDaemon kills any running tailscaled for a tailnet before
 // starting a new one. Prevents orphan accumulation on restarts.
 func (m *RealManager) cleanupExistingDaemon(tailnetID string) {

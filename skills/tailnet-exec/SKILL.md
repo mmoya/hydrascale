@@ -28,7 +28,7 @@ the daemon.
 
 | Form | Result |
 |---|---|
-| `hydrascale exec <id> -- <command>` | The command runs inside the namespace of the tailnet `<id>`. |
+| `hydrascale exec <id> -- <command>` | The command runs inside the namespace of the tailnet `<id>`. A `tailscale` command finds the socket of that tailnet, so it needs no `--socket` option. |
 | `hydrascale tailscale <id> -- <arguments>` | The `tailscale` command runs inside the namespace, against the socket of that tailnet. |
 | `hydrascale ping <id> <target>` | `tailscale ping` reaches the peer `<target>` from that namespace. |
 | `hydrascale ssh <id> <target>` | `tailscale ssh` reaches the peer `<target>` from that namespace. |

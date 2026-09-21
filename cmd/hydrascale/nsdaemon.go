@@ -119,14 +119,23 @@ func mountEtcOverlay(upper, work string) error {
 	if err := os.RemoveAll(work); err != nil {
 		return fmt.Errorf("remove overlay workdir: %w", err)
 	}
+	return mountOverlay("/etc", upper, work)
+}
+
+// mountOverlay places an overlay mount on target and verifies it. The lower directory is
+// target itself, so the mount hides no file that target holds now.
+// mountOverlay returns an error when it cannot create the upper directory or the work
+// directory, when the mount call fails, and when /proc/self/mountinfo then holds no
+// overlay mount on target.
+func mountOverlay(target, upper, work string) error {
 	if err := os.MkdirAll(upper, 0755); err != nil {
 		return fmt.Errorf("create overlay upperdir: %w", err)
 	}
 	if err := os.MkdirAll(work, 0755); err != nil {
 		return fmt.Errorf("create overlay workdir: %w", err)
 	}
-	opts := fmt.Sprintf("lowerdir=/etc,upperdir=%s,workdir=%s", upper, work)
-	if err := syscall.Mount("overlay", "/etc", "overlay", 0, opts); err != nil {
+	opts := fmt.Sprintf("lowerdir=%s,upperdir=%s,workdir=%s", target, upper, work)
+	if err := syscall.Mount("overlay", target, "overlay", 0, opts); err != nil {
 		return err
 	}
 	f, err := os.Open("/proc/self/mountinfo")
@@ -134,16 +143,16 @@ func mountEtcOverlay(upper, work string) error {
 		return fmt.Errorf("read /proc/self/mountinfo: %w", err)
 	}
 	defer f.Close()
-	if !hasEtcOverlay(f) {
-		return fmt.Errorf("/proc/self/mountinfo holds no overlay mount on /etc")
+	if !hasOverlayOn(f, target) {
+		return fmt.Errorf("/proc/self/mountinfo holds no overlay mount on %s", target)
 	}
 	return nil
 }
 
-// hasEtcOverlay reports whether the mountinfo stream holds an overlay mount on /etc.
+// hasOverlayOn reports whether the mountinfo stream holds an overlay mount on target.
 // The optional fields of a line end at the separator " - ", so the filesystem type is
 // the first field after the separator and it is not at a fixed index.
-func hasEtcOverlay(r io.Reader) bool {
+func hasOverlayOn(r io.Reader, target string) bool {
 	scanner := bufio.NewScanner(r)
 	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
 	for scanner.Scan() {
@@ -157,7 +166,7 @@ func hasEtcOverlay(r io.Reader) bool {
 		if len(head) < 5 || len(tail) < 1 {
 			continue
 		}
-		if head[4] == "/etc" && tail[0] == "overlay" {
+		if head[4] == target && tail[0] == "overlay" {
 			return true
 		}
 	}

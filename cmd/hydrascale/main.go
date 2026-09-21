@@ -68,6 +68,7 @@ reconciles toward it. GitOps for tailnets.`,
 
 	rootCmd.AddCommand(initCmd())
 	rootCmd.AddCommand(nsDaemonCmd())
+	rootCmd.AddCommand(nsExecCmd())
 	rootCmd.AddCommand(addCmd())
 	rootCmd.AddCommand(removeCmd())
 	rootCmd.AddCommand(listCmd())
@@ -614,15 +615,28 @@ func serveCmd() *cobra.Command {
 
 // --- Namespace execution helpers ---
 
-// runInNamespace runs an arbitrary command inside the network namespace that
-// belongs to tailnetID.  When passthrough is true the child process inherits
-// stdin/stdout/stderr from the current process.
+// runInNamespace runs an arbitrary command inside the network namespace that belongs to
+// tailnetID, through the hydrascale __nsexec helper. The helper places the socket of the
+// tailnet where the tailscale command expects it, so a command needs no --socket option.
+// When passthrough is true, the child process inherits stdin, stdout and stderr from the
+// current process. See cmd/hydrascale/nsexec.go.
 func runInNamespace(tailnetID string, args []string, passthrough bool) error {
 	if !config.IsValidID(tailnetID) {
 		return fmt.Errorf("invalid tailnet ID %q", tailnetID)
 	}
 	nsName := namespaces.GetNamespaceName(tailnetID)
-	cmdArgs := append([]string{"netns", "exec", nsName}, args...)
+	self, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("cannot locate hydrascale binary: %w", err)
+	}
+	cmdArgs := []string{
+		"netns", "exec", nsName,
+		self, "__nsexec",
+		"--socket", daemon.SocketPath(tailnetID),
+		"--scratch", daemon.RunScratchPath(tailnetID),
+		"--",
+	}
+	cmdArgs = append(cmdArgs, args...)
 	c := exec.Command("ip", cmdArgs...)
 	if passthrough {
 		c.Stdin = os.Stdin
@@ -639,10 +653,11 @@ func runInNamespace(tailnetID string, args []string, passthrough bool) error {
 }
 
 // runTailscaleInNamespace runs a tailscale sub-command inside the network
-// namespace for tailnetID, pointing it at the correct per-tailnet socket.
+// namespace for tailnetID. The __nsexec helper that runInNamespace starts places the
+// socket of the tailnet at the location that the tailscale command expects, so
+// runTailscaleInNamespace passes no --socket option.
 func runTailscaleInNamespace(tailnetID string, tsArgs []string) error {
-	socketPath := daemon.SocketPath(tailnetID)
-	args := append([]string{"tailscale", "--socket=" + socketPath}, tsArgs...)
+	args := append([]string{"tailscale"}, tsArgs...)
 	return runInNamespace(tailnetID, args, true)
 }
 

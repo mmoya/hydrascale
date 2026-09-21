@@ -151,26 +151,26 @@ func TestNsDaemon_reports_the_record_write_failure(t *testing.T) {
 	}
 }
 
-func TestHasEtcOverlay_finds_an_overlay_mount_on_etc(t *testing.T) {
-	if !hasEtcOverlay(strings.NewReader(mountinfoWithEtcOverlay)) {
-		t.Error("hasEtcOverlay = false, want true")
+func TestHasOverlayOn_etc_finds_an_overlay_mount_on_etc(t *testing.T) {
+	if !hasOverlayOn(strings.NewReader(mountinfoWithEtcOverlay), "/etc") {
+		t.Error("hasOverlayOn = false, want true")
 	}
 }
 
-func TestHasEtcOverlay_rejects_an_overlay_mount_on_another_mount_point(t *testing.T) {
-	if hasEtcOverlay(strings.NewReader(mountinfoWithoutEtcOverlay)) {
-		t.Error("hasEtcOverlay = true, want false")
+func TestHasOverlayOn_etc_rejects_an_overlay_mount_on_another_mount_point(t *testing.T) {
+	if hasOverlayOn(strings.NewReader(mountinfoWithoutEtcOverlay), "/etc") {
+		t.Error("hasOverlayOn = true, want false")
 	}
 }
 
-func TestHasEtcOverlay_reads_past_an_optional_field(t *testing.T) {
-	if !hasEtcOverlay(strings.NewReader(mountinfoWithOptionalField)) {
-		t.Error("hasEtcOverlay = false, want true")
+func TestHasOverlayOn_etc_reads_past_an_optional_field(t *testing.T) {
+	if !hasOverlayOn(strings.NewReader(mountinfoWithOptionalField), "/etc") {
+		t.Error("hasOverlayOn = false, want true")
 	}
 }
 
-func TestHasEtcOverlay_rejects_an_empty_stream(t *testing.T) {
-	if hasEtcOverlay(strings.NewReader("")) {
-		t.Error("hasEtcOverlay = true, want false")
+func TestHasOverlayOn_etc_rejects_an_empty_stream(t *testing.T) {
+	if hasOverlayOn(strings.NewReader(""), "/etc") {
+		t.Error("hasOverlayOn = true, want false")
 	}
 }

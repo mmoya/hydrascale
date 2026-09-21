@@ -295,6 +295,7 @@ argument list.
 | `internal/hostaccess/resolved.go` | 40, 52 | `resolvectl dns lo 127.0.0.53:5354`, `resolvectl revert lo` | constants |
 | `internal/daemon/daemon.go` | 94, 252, 402 | `ip netns exec <ns> tailscale --socket=<path> status --json` | `namespaceName` and `socketPath`, both derived from the tailnet id |
 | `internal/daemon/daemon.go` | 149 | `ip netns exec <ns> <self> __nsdaemon --etc-upper <u> --etc-work <w> -- tailscaled …` | `self` from `os.Executable`; every path derived from the tailnet id |
+| `cmd/hydrascale/main.go` | 620 | `ip netns exec <ns> <self> __nsexec --socket <s> --scratch <d> -- <command…>` | `self` from `os.Executable`; both paths derived from the tailnet id; the command from the operator |
 | `internal/daemon/daemon.go` | 338 | `ip netns exec <ns> tailscale --socket=<path> up …` | the auth key through a file, the control URL from the configuration file |
 | `internal/daemon/daemon.go` | 424 | `ip netns exec <ns> tailscale --socket=<path> set --accept-dns=<v>` | `v` is `"false"` or `"true"`, both constants |
 
